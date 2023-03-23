@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript', 'typescript', 'python', 'html' ]
+        language: [ 'javascript', 'typescript', 'python' ]
 
     steps:
     - name: Checkout repository
@@ -33,7 +33,9 @@ jobs:
         languages: ${{ matrix.language }}
 
     - name: Build javascript file
-      run: npm run build
+      run: |
+        npm i
+        npm run build
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
