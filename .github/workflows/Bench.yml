@@ -1,0 +1,23 @@
+name: Jest Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Install dependencies
+        run: npm install
+      - name: Run Jest tests
+        run: npm run test -- --reporters=default --reporters=jest-benchmark
+      - name: Upload benchmark report
+        uses: actions/upload-artifact@v2
+        with:
+          name: benchmark-report
+          path: ./benchmark-results.json
