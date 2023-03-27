@@ -3,7 +3,7 @@
 */
 
 global.$ = require("jquery");
-global.URL.createObjectURL = function() {};
+global.URL.createObjectURL = function () { };
 let $3Dmol = require("../build/3Dmol.js");
 
 describe('Tests Clamp, degToRad and Quaternion', () => {

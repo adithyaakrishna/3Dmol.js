@@ -36,7 +36,10 @@
     "generate:glcheck": "python3 ./tests/glcheck/generate_glcheck_render_tests.py -min",
     "generate:jest": "python3 tests/jest/generate_jest_render_tests.py",
     "cover": "npm run generate:jest && npx jest --coverage",
-    "doc": "npx jsdoc -c jsdoc.conf.json src doc.md"
+    "doc": "npx jsdoc -c jsdoc.conf.json src doc.md",
+    "bench": "npm benchmark",
+    "benchmark": "npm test:new --projects jest-benchmark.config.ts",
+    "test:new": "node --experimental-vm-modules ./node_modules/.bin/jest",
   },
   "engines": {
     "npm": ">=8.11",
