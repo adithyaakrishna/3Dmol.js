@@ -15,7 +15,7 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Run Jest tests
-        run: npm run test -- --reporters=default --reporters=jest-benchmark
+        run: npm run test
       - name: Upload benchmark report
         uses: actions/upload-artifact@v2
         with:
