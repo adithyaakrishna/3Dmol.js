@@ -10,5 +10,11 @@ export default{
     "coverageReporters": [
       "lcov",
       "text"
+    ],
+    reporters: [
+      'default',
+      'jest-benchmark',
+      ['github-actions', {silent: false}],
+      'summary'
     ]
 }
