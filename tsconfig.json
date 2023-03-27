@@ -9,6 +9,7 @@
     "sourceMap": true,
     "declaration": true,
     "suppressImplicitAnyIndexErrors": true,
+    "ignoreDeprecations": "5.0",
     "noUnusedLocals": false,
     "moduleResolution": "node",
     "lib": [
