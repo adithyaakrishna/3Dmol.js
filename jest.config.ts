@@ -13,7 +13,7 @@ export default{
     ],
     reporters: [
       'default',
-      'jest-benchmark',
+      'jest-bench',
       ['github-actions', {silent: false}],
       'summary'
     ]
