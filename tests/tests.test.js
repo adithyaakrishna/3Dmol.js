@@ -5,14 +5,25 @@
 global.$ = require("jquery");
 global.URL.createObjectURL = function() {};
 let $3Dmol = require("../build/3Dmol.js");
+const Benchmark = require('benchmark');
+const suite = new Benchmark.Suite();
 
-test("Test clamp with x being in the range of min and max" , clampInRange);
-test("Test clamp with x being less than min" , clampLessThanMin);
-test("Test clamp with x being greater than max" , clampGreaterThanMax);
-test("Test degToRad on 180 degrees", degToRadPiRadian)
-test("Test degToRad on 45 degrees", degToRadQuarterPiRadian)
-test("Test Quaternion constructor with all args given", quatConstructorBasic)
-test("Test Quaternion constructor with no args given", quatConstructorNoArgs)
+// To benchmark the tests
+suite.add('Benchmarking for clamp, degToRad, Quaternion tests', () => {
+	test("Test clamp with x being in the range of min and max" , clampInRange);
+	test("Test clamp with x being less than min" , clampLessThanMin);
+	test("Test clamp with x being greater than max" , clampGreaterThanMax);
+	test("Test degToRad on 180 degrees", degToRadPiRadian)
+	test("Test degToRad on 45 degrees", degToRadQuarterPiRadian)
+	test("Test Quaternion constructor with all args given", quatConstructorBasic)
+	test("Test Quaternion constructor with no args given", quatConstructorNoArgs)
+})
+.on('Benchmark Cycle', event => {
+	// Output benchmark result by converting benchmark result to string
+	console.log(String(event.target));
+})
+.run();
+
 
 function clampInRange()
 {
