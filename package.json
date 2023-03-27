@@ -8,20 +8,6 @@
   },
   "author": "David Koes and contributors",
   "homepage": "http://3dmol.org",
-  "jest": {
-    "testRegex": [
-      "./*\\.test.js$",
-      "./*\\.test.ts$"
-    ],
-    "setupFiles": [
-      "jest-webgl-canvas-mock",
-      "jsdom-worker"
-    ],
-    "coverageReporters": [
-      "lcov",
-      "text"
-    ]
-  },
   "license": "BSD-3-Clause",
   "main": "build/3Dmol.js",
   "types": "build/types/index.d.ts",
