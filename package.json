@@ -25,7 +25,7 @@
     "doc": "npx jsdoc -c jsdoc.conf.json src doc.md",
     "bench": "npm benchmark",
     "benchmark": "npm test:new --projects jest-benchmark.config.ts",
-    "test:new": "node --experimental-vm-modules ./node_modules/.bin/jest",
+    "test:new": "node --experimental-vm-modules ./node_modules/.bin/jest"
   },
   "engines": {
     "npm": ">=8.11",
