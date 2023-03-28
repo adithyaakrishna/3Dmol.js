@@ -14,7 +14,7 @@
   "scripts": {
     "build": "webpack --config webpack.dev.js --mode development  && webpack --config webpack.prod.js --mode production && python3 tests/auto/generate_tests.py && npm run doc",
     "prepare": "npm run build",
-    "jest": "npx jest --testPathIgnorePatterns=render.test.js --reporters=jest-bench",
+    "jest": "npx jest --testPathIgnorePatterns=render.test.js --reporters=default --reporters=jest-bench/reporter",
     "test": "npm run generate:jest && npm run jest && npm run glcheck",
     "glcheck": "npm run clean:glcheck && npm run generate:glcheck && npm run test:glcheck",
     "test:glcheck": "npx glcheck --config ./tests/glcheck/glcheck.config.json",
@@ -24,7 +24,7 @@
     "cover": "npm run generate:jest && npx jest --coverage",
     "doc": "npx jsdoc -c jsdoc.conf.json src doc.md",
     "bench": "npm benchmark",
-    "benchmark": "npm test:new --projects jest-benchmark.config.ts",
+    "benchmark": "npm test:new --projects jest-bench.config.ts",
     "test:new": "node --experimental-vm-modules ./node_modules/.bin/jest"
   },
   "engines": {

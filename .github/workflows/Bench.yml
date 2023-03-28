@@ -2,7 +2,7 @@ name: Jest Tests
 
 on:
   push:
-    branches: [master]
+    branches: [master, feat/benchmarking]
   pull_request:
   workflow_dispatch:
 

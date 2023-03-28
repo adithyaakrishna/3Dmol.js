@@ -2,7 +2,7 @@ name: Benchmark.js Example
 on:
   push:
     branches:
-      - master
+      - [master, feat/benchmarking]
 
 permissions:
   contents: write
