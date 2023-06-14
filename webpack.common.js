@@ -21,6 +21,7 @@ module.exports =  {
       "./src/ui/defaultValues.js"]},
   output: {
     path: path.resolve(__dirname, "build"),
+    pathinfo: false,
     globalObject: "this",
     library: '[name]',
     libraryTarget: "umd",
@@ -28,11 +29,31 @@ module.exports =  {
 
   resolve: {
     extensions: [".ts", ".tsx", ".js", ".json"],
+    symlinks: false,
+    cacheWithContext: false
   },
 
   module: {
     rules: [
-      { test: /\.tsx?$/, loader: "ts-loader"},
+      { 
+        test: /\.tsx?$/,
+        loader: "ts-loader", 
+        options: {
+          // transpile only in happyPack mode
+          // type checking is done via fork-ts-checker-webpack-plugin
+          happyPackMode: true,
+          transpileOnly: true,
+          // must override compiler options here, even though we have set
+          // the same options in `tsconfig.json`, because they may still
+          // be overridden by `tsconfig.json` in node_modules subdirectories.
+          compilerOptions: {
+            esModuleInterop: false,
+            importHelpers: false,
+            module: 'esnext',
+            target: 'esnext',
+          },
+        },
+      },
       { test: /\.frag/, loader: "raw-loader" },
       { test: /\.vert/, loader: "raw-loader" }
     ],
@@ -44,5 +65,23 @@ module.exports =  {
         $: "jquery"
     }),
     new webpack.BannerPlugin({ banner }), 
-    new ESLintPlugin()],
+    new ESLintPlugin(),
+    new ForkTsCheckerWebpackPlugin({
+      eslint: {
+        files: './{src}/**/*.{ts,tsx,js,jsx}',
+        memoryLimit: 4096,
+        options: {
+          ignorePath: './.eslintignore',
+        },
+      },
+    }),
+  ],
+  optimization: {
+    runtimeChunk: true,
+  },
+  cache: {
+    type: 'filesystem',
+    cacheDirectory: path.resolve(__dirname, '.webpack_cache'),
+  },
+
 };
