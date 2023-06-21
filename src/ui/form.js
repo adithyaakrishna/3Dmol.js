@@ -362,7 +362,7 @@ $3Dmol.UI.Form = (function () {
             var inputString = input.val();
 
             var dots = inputString.match(/\./g) || [];
-            var checkString = inputString.replaceAll(/\./g, '').replaceAll(/[0-9]/g, '');
+            var checkString = inputString.replace(/\./g, '').replace(/[0-9]/g, '');
 
             if (dots.length > 1) {
                 return false
@@ -380,7 +380,7 @@ $3Dmol.UI.Form = (function () {
         function checkInputNumber() {
             var inputString = input.val();
 
-            var checkString = inputString.replaceAll(/[0-9]/g, '');
+            var checkString = inputString.replace(/[0-9]/g, '');
 
             if (checkString != '') return false;
 
@@ -395,7 +395,7 @@ $3Dmol.UI.Form = (function () {
 
         // Checks only number, comma and hyphen present
         function checkRangeTokens(inputString) {
-            var finalString = inputString.replaceAll(',', '').replaceAll('-', '').replaceAll(/[0-9]/g, '').replaceAll(' ', '');
+            var finalString = inputString.replace(/,/g, '').replace(/-/g, '').replace(/[0-9]/g, '').replace(/ /g, '');
 
             if (finalString == '')
                 return true;
@@ -404,7 +404,7 @@ $3Dmol.UI.Form = (function () {
         }
 
         function checkList(inputString) {
-            inputString = inputString.replaceAll(' ', '');
+            inputString = inputString.replace(/ /g, '');
 
             if (inputString[inputString.length - 1] == ',') {
                 inputString = inputString.slice(0, -1);
