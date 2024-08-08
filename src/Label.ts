@@ -100,7 +100,7 @@ export class Label {
   private readonly canvas: HTMLCanvasElement;
   private readonly context: CanvasRenderingContext2D;
   public readonly sprite: Sprite;
-  private readonly text: string;
+  public readonly text: string;
   public readonly frame: number | undefined;
 
   constructor(text: string, parameters: LabelSpec = {}) {
