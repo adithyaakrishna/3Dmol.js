@@ -4,6 +4,7 @@ import {
   SpriteMaterial,
   Sprite,
   Vector2,
+  Material,
 } from "./WebGL";
 import { Gradient } from "./Gradient";
 import { Color, CC, ColorSpec } from "./colors";
@@ -13,8 +14,22 @@ import {XYZ} from "./WebGL/math"
 
 export let LabelCount = 0;
 
-// Function for drawing rounded rectangles - for Label drawing
-function roundRect(ctx: CanvasRenderingContext2D, x: any, y: any, w: number, h: number, r: number, drawBorder: boolean) {
+interface RGBA {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+}
+
+const roundRect = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+  drawBorder: boolean
+): void => {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.lineTo(x + w - r, y);
@@ -28,294 +43,201 @@ function roundRect(ctx: CanvasRenderingContext2D, x: any, y: any, w: number, h: 
   ctx.closePath();
   ctx.fill();
   if (drawBorder) ctx.stroke();
-}
+};
 
-//do all the checks to figure out what color is desired
-function getColor(style: any, stylealpha?: any, init?: any) {
-  var ret = init;
-  if (typeof style != "undefined") {
-    //convet regular colors
-    if (style instanceof Color) ret = style.scaled();
-    else {
-      //hex or name
-      ret = CC.color(style);
-      if (typeof ret.scaled != "undefined") {
-        ret = ret.scaled(); //not already scaled to 255
+const getColor = (style: any, stylealpha?: number, init?: RGBA): RGBA => {
+  let ret = init ?? { r: 255, g: 255, b: 255, a: 1.0 };
+
+  if (style) {
+    if (style instanceof Color) {
+      const scaled = style.scaled();
+      ret = { r: scaled.r, g: scaled.g, b: scaled.b, a: 1.0 };
+    } else {
+      let color = CC.color(style);
+      if (typeof (color as any).scaled !== "undefined") {
+        const scaled = (color as any).scaled();
+        ret = { r: scaled.r, g: scaled.g, b: scaled.b, a: scaled.a ?? 1.0 };
+      } else {
+        ret = { r: color.r, g: color.g, b: color.b, a: (color as any).a ?? 1.0 };
       }
     }
   }
-  if (typeof stylealpha != "undefined") {
-    ret.a = parseFloat(stylealpha);
+
+  if (stylealpha !== undefined) {
+    ret.a = parseFloat(stylealpha.toString());
   }
+
   return ret;
-}
+};
 
-/** Label style specification */
 export interface LabelSpec {
-/** font name, default sans-serif */
   font?: string;
-  /** height of text, default 18 */
   fontSize?: number;
-  /** font color, default white */
   fontColor?: ColorSpec;
-  /** font opacity, default 1 */
   fontOpacity?: number;
-  /** line width of border around label, default 0  */
   borderThickness?: number;
-  /** color of border, default backgroundColor */
   borderColor?: ColorSpec;
-  /** opacity of border */
   borderOpacity?: number;
-  /** color of background, default black */
   backgroundColor?: ColorSpec;
-  /** opacity of background, default 1.0 */
   backgroundOpacity?: number;
-  /** coordinates for label */
   position?: XYZ;
-  /** x,y pixel offset of label from position */
   screenOffset?: Vector2;
-  /** always put labels in front of model */
   inFront?: boolean;
-  /** show background rounded rectangle, default true */
   showBackground?: boolean;
-  /** position is in screen (not model) coordinates which are pixel offsets from the upper left corner */
   useScreen?: boolean;
-  /** An elment to draw into the label. Any CanvasImageSource is allowed.  Label is resized to size of image */
-  backgroundImage?: any;
-  /** how to orient the label w/respect to position: "topLeft" (default),
-   * "topCenter", "topRight", "centerLeft", "center", "centerRight",
-   * "bottomLeft", "bottomCenter", "bottomRight", or an arbitrary offset */
+  backgroundImage?: CanvasImageSource;
   alignment?: string | Vector2;
-  /** if set, only display in this frame of an animation */
   frame?: number;
+  padding?: number;
+  bold?: boolean;
+  backgroundGradient?: any;
+  backgroundWidth?: number;
+  backgroundHeight?: number;
 }
 
-/**
- * Renderable labels
- * @constructor $3Dmol.Label
- * @param {string} tag - Label text
- * @param {LabelSpec} parameters Label style and font specifications
- */
 export class Label {
-  id: number;
-  stylespec: any;
-  canvas: HTMLCanvasElement;
-  context: any;
-  sprite: any;
-  text: any;
-  frame: any;
-  constructor(text: string, parameters: LabelSpec) {
-    this.id = LabelCount++;
-    this.stylespec = parameters || {};
+  private readonly stylespec: LabelSpec;
+  private readonly canvas: HTMLCanvasElement;
+  private readonly context: CanvasRenderingContext2D;
+  public readonly sprite: Sprite;
+  private readonly text: string;
+  public readonly frame: number | undefined;
 
+  constructor(text: string, parameters: LabelSpec = {}) {
+    LabelCount++;
+    this.stylespec = parameters;
     this.canvas = document.createElement("canvas");
-    //todo: implement resizing canvas..
     this.canvas.width = 134;
     this.canvas.height = 35;
-    this.context = this.canvas.getContext("2d");
+    this.context = this.canvas.getContext("2d")!;
     this.sprite = new Sprite();
     this.text = text;
     this.frame = this.stylespec.frame;
   }
 
-  getStyle() {
+  public getStyle(): LabelSpec {
     return this.stylespec;
   }
 
-  setContext() {
-    var style = this.stylespec;
-    var useScreen =
-      typeof style.useScreen == "undefined" ? false : style.useScreen;
+  public setContext(): void {
+    const {
+      useScreen = false,
+      showBackground = true,
+      font = "sans-serif",
+      fontSize = 18,
+      fontColor,
+      fontOpacity,
+      padding = 4,
+      borderThickness = 0,
+      backgroundColor,
+      backgroundOpacity,
+      borderColor,
+      borderOpacity,
+      position = { x: -10, y: 1, z: 1 },
+      inFront = true,
+      alignment = SpriteAlignment.topLeft,
+      bold = false,
+      backgroundImage,
+      backgroundWidth,
+      backgroundHeight,
+      backgroundGradient,
+    } = this.stylespec;
 
-    var showBackground = style.showBackground;
-    if (showBackground === "0" || showBackground === "false")
-      showBackground = false;
-    if (typeof showBackground == "undefined") showBackground = true; //default
-    var font = style.font ? style.font : "sans-serif";
-
-    var fontSize = parseInt(style.fontSize) ? parseInt(style.fontSize) : 18;
-
-    var fontColor = getColor(style.fontColor, style.fontOpacity, {
-      r: 255,
-      g: 255,
-      b: 255,
+    const fontColorRGBA = getColor(fontColor, fontOpacity);
+    const backgroundColorRGBA = getColor(backgroundColor, backgroundOpacity, {
+      r: 0,
+      g: 0,
+      b: 0,
       a: 1.0,
     });
-
-    var padding = style.padding ? style.padding : 4;
-    var borderThickness = style.borderThickness ? style.borderThickness : 0;
-
-    var backgroundColor = getColor(
-      style.backgroundColor,
-      style.backgroundOpacity,
-      {
-        r: 0,
-        g: 0,
-        b: 0,
-        a: 1.0,
-      }
+    const borderColorRGBA = getColor(
+      borderColor,
+      borderOpacity,
+      backgroundColorRGBA
     );
 
-    var borderColor = getColor(
-      style.borderColor,
-      style.borderOpacity,
-      backgroundColor
-    );
+    this.context.font = `${bold ? "bold " : ""}${fontSize}px ${font}`;
 
-    var position = style.position
-      ? style.position
-      : {
-        x: -10,
-        y: 1,
-        z: 1,
-      };
+    const metrics = this.context.measureText(this.text);
+    const textWidth = metrics.width;
 
-    // Should labels always be in front of model?
-    var inFront = style.inFront !== undefined ? style.inFront : true;
-    if (inFront === "false" || inFront === "0") inFront = false;
+    const actualBorderThickness = showBackground ? borderThickness : 0;
+    let width = textWidth + 2.5 * actualBorderThickness + 2 * padding;
+    let height = fontSize * 1.25 + 2 * actualBorderThickness + 2 * padding;
 
-    // clear canvas
-
-    var spriteAlignment = style.alignment || SpriteAlignment.topLeft;
-    if (
-      typeof spriteAlignment == "string" &&
-      spriteAlignment in SpriteAlignment
-    ) {
-      spriteAlignment = (SpriteAlignment as any)[spriteAlignment] ;
-    }
-
-    var bold = "";
-    if (style.bold) bold = "bold ";
-    this.context.font = bold + fontSize + "px  " + font;
-
-    var metrics = this.context.measureText(this.text);
-    var textWidth = metrics.width;
-
-    if (!showBackground) borderThickness = 0;
-
-    var width = textWidth + 2.5 * borderThickness + 2 * padding;
-    var height = fontSize * 1.25 + 2 * borderThickness + 2 * padding; // 1.25 is extra height factor for text below baseline: g,j,p,q.
-
-    if (style.backgroundImage) {
-      //resize label to image
-      var img = style.backgroundImage;
-      var w = style.backgroundWidth ? style.backgroundWidth : img.width;
-      var h = style.backgroundHeight ? style.backgroundHeight : img.height;
-      if (w > width) width = w;
-      if (h > height) height = h;
+    if (backgroundImage) {
+      const w = backgroundWidth ?? (backgroundImage as HTMLImageElement).width;
+      const h = backgroundHeight ?? (backgroundImage as HTMLImageElement).height;
+      width = Math.max(width, w);
+      height = Math.max(height, h);
     }
 
     this.canvas.width = width;
     this.canvas.height = height;
-    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.context.clearRect(0, 0, width, height);
 
-    bold = "";
-    if (style.bold) bold = "bold ";
-    this.context.font = bold + fontSize + "px  " + font;
+    this.context.font = `${bold ? "bold " : ""}${fontSize}px ${font}`;
 
-    // background color
-    this.context.fillStyle =
-      "rgba(" +
-      backgroundColor.r +
-      "," +
-      backgroundColor.g +
-      "," +
-      backgroundColor.b +
-      "," +
-      backgroundColor.a +
-      ")";
-    // border color
-    this.context.strokeStyle =
-      "rgba(" +
-      borderColor.r +
-      "," +
-      borderColor.g +
-      "," +
-      borderColor.b +
-      "," +
-      borderColor.a +
-      ")";
-
-    if (style.backgroundGradient) {
-      let gradient = this.context.createLinearGradient(
-        0,
-        height / 2,
-        width,
-        height / 2
-      );
-      let g = Gradient.getGradient(style.backgroundGradient);
-      let minmax = g.range();
-      let min = -1;
-      let max = 1;
-      if (minmax) {
-        min = minmax[0];
-        max = minmax[1];
-      }
-      let d = max - min;
-      for (let i = 0; i < 1.01; i += 0.1) {
-        let c = getColor(g.valueToHex(min + d * i));
-        let cname = "rgba(" + c.r + "," + c.g + "," + c.b + "," + c.a + ")";
-        gradient.addColorStop(i, cname);
+    if (backgroundGradient) {
+      const gradient = this.context.createLinearGradient(0, height / 2, width, height / 2);
+      const g = Gradient.getGradient(backgroundGradient);
+      const [min, max] = g.range() ?? [-1, 1];
+      const d = max - min;
+      for (let i = 0; i <= 1; i += 0.1) {
+        const c = getColor(g.valueToHex(min + d * i));
+        gradient.addColorStop(i, `rgba(${c.r},${c.g},${c.b},${c.a})`);
       }
       this.context.fillStyle = gradient;
+    } else {
+      this.context.fillStyle = `rgba(${backgroundColorRGBA.r},${backgroundColorRGBA.g},${backgroundColorRGBA.b},${backgroundColorRGBA.a})`;
     }
 
-    this.context.lineWidth = borderThickness;
+    this.context.strokeStyle = `rgba(${borderColorRGBA.r},${borderColorRGBA.g},${borderColorRGBA.b},${borderColorRGBA.a})`;
+    this.context.lineWidth = actualBorderThickness;
+
     if (showBackground) {
       roundRect(
         this.context,
-        borderThickness,
-        borderThickness,
-        width - 2 * borderThickness,
-        height - 2 * borderThickness,
+        actualBorderThickness,
+        actualBorderThickness,
+        width - 2 * actualBorderThickness,
+        height - 2 * actualBorderThickness,
         6,
-        borderThickness > 0
+        actualBorderThickness > 0
       );
     }
 
-    if (style.backgroundImage) {
-      this.context.drawImage(img, 0, 0, width, height);
+    if (backgroundImage) {
+      this.context.drawImage(backgroundImage, 0, 0, width, height);
     }
 
-    // text color
-    this.context.fillStyle =
-      "rgba(" +
-      fontColor.r +
-      "," +
-      fontColor.g +
-      "," +
-      fontColor.b +
-      "," +
-      fontColor.a +
-      ")";
-
+    this.context.fillStyle = `rgba(${fontColorRGBA.r},${fontColorRGBA.g},${fontColorRGBA.b},${fontColorRGBA.a})`;
     this.context.fillText(
       this.text,
-      borderThickness + padding,
-      fontSize + borderThickness + padding,
+      actualBorderThickness + padding,
+      fontSize + actualBorderThickness + padding,
       textWidth
     );
 
-    // canvas contents will be used for a texture
-    var texture = new Texture(this.canvas);
+    const texture = new Texture(this.canvas);
     texture.needsUpdate = true;
+
     this.sprite.material = new SpriteMaterial({
       map: texture,
       useScreenCoordinates: useScreen,
-      alignment: spriteAlignment,
+      alignment: typeof alignment === 'string' ? (SpriteAlignment as any)[alignment] : alignment,
       depthTest: !inFront,
-      screenOffset: style.screenOffset || null,
-    });
+      screenOffset: this.stylespec.screenOffset ?? null,
+    }) as unknown as Material;
 
     this.sprite.scale.set(1, 1, 1);
-
     this.sprite.position.set(position.x, position.y, position.z);
   }
 
-  // clean up material and texture
-  dispose() {
-    if (this.sprite.material.map !== undefined)
-      this.sprite.material.map.dispose();
-    if (this.sprite.material !== undefined) this.sprite.material.dispose();
+  public dispose(): void {
+    if ((this.sprite.material as SpriteMaterial).map) {
+      (this.sprite.material as SpriteMaterial).map.dispose();
+    }
+    this.sprite.material.dispose();
   }
 }
