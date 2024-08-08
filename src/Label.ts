@@ -96,12 +96,12 @@ export interface LabelSpec {
 }
 
 export class Label {
-  private readonly stylespec: LabelSpec;
-  private readonly canvas: HTMLCanvasElement;
-  private readonly context: CanvasRenderingContext2D;
-  public readonly sprite: Sprite;
-  public readonly text: string;
-  public readonly frame: number | undefined;
+  public stylespec: LabelSpec;
+  public canvas: HTMLCanvasElement;
+  public context: CanvasRenderingContext2D;
+  public sprite: Sprite;
+  public text: string;
+  public frame: number | undefined;
 
   constructor(text: string, parameters: LabelSpec = {}) {
     LabelCount++;
